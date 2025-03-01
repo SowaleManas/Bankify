@@ -7,7 +7,25 @@ public class Bank {
     }
 
     public Account getAccount(String accountNumber) {
-        return Account.getAccount(accountNumber);
+        Connection conn = DatabaseManager.getConnection();
+        if (conn == null) return null;
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement("SELECT * FROM accounts WHERE account_number = ?");
+            stmt.setString(1, accountNumber);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return new Account(
+                    rs.getString("account_number"),
+                    rs.getString("account_holder"),
+                    rs.getDouble("balance")
+                );
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error fetching account: " + e.getMessage());
+        }
+        return null;
     }
 
     public boolean transfer(String fromAcc, String toAcc, double amount) {

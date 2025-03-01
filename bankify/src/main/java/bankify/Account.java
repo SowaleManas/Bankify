@@ -15,6 +15,10 @@ public class Account {
         this.balance = balance;
     }
 
+    public String getAccountName() {
+        return accountHolder
+    }
+
     public String getAccountNumber() {
         return accountNumber;
     }
@@ -52,43 +56,53 @@ public class Account {
             System.out.println("❌ Deposit amount must be greater than zero.");
             return false;
         }
-        balance += amount;
+        Connection conn = DatabaseManager.getConnection();
+        if (conn == null) return false;
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("UPDATE accounts SET balance = ? WHERE account_number = ?")) {
-            stmt.setDouble(1, balance);
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "UPDATE accounts SET balance = balance + ? WHERE account_number = ?"
+            );
+            stmt.setDouble(1, amount);
             stmt.setString(2, accountNumber);
-            stmt.executeUpdate();
-            saveTransaction("Deposit", amount);
-            return true;
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("✅ Deposit successful.");
+                return true;
+            }
         } catch (SQLException e) {
             System.out.println("❌ Deposit failed: " + e.getMessage());
-            return false;
         }
+        return false;
     }
 
     public boolean withdraw(double amount) {
-        if (amount <= 0) {
-            System.out.println("❌ Withdrawal amount must be greater than zero.");
+        if (amount <= 0 || amount > balance) {
+            System.out.println("❌ Insufficient funds.");
             return false;
         }
-        if (amount > balance) {
-            System.out.println("❌ Withdrawal failed: Insufficient balance.");
-            return false;
-        }
-        balance -= amount;
 
-        try (Connection conn = DatabaseManager.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("UPDATE accounts SET balance = ? WHERE account_number = ?")) {
-            stmt.setDouble(1, balance);
+        Connection conn = DatabaseManager.getConnection();
+        
+        if (conn == null) return false;
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "UPDATE accounts SET balance = balance - ? WHERE account_number = ?"
+            );
+            stmt.setDouble(1, amount);
             stmt.setString(2, accountNumber);
-            stmt.executeUpdate();
-            saveTransaction("Withdrawal", amount);
-            return true;
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                System.out.println("✅ Withdrawal successful.");
+                return true;
+            }
         } catch (SQLException e) {
             System.out.println("❌ Withdrawal failed: " + e.getMessage());
-            return false;
         }
+        return false;
     }
 
     private void saveTransaction(String type, double amount) {
@@ -106,6 +120,11 @@ public class Account {
     public void viewBalance() {
         System.out.println("💰 Current Balance: $" + balance);
     }
+
+    public double getBalance() {
+    return this.balance;
+    }
+
 
     public void viewTransactionHistory() {
         try (Connection conn = DatabaseManager.getConnection();
