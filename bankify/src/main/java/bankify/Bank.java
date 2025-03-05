@@ -1,9 +1,30 @@
 package bankify;
+import org.mindrot.jbcrypt.BCrypt;
+import java.sql.*;
 
 public class Bank {
-    public boolean createAccount(String accountNumber, String holderName, double initialBalance) {
-        Account account = new Account(accountNumber, holderName, initialBalance);
-        return account.saveAccount();
+    public boolean createAccount(String accNo, String accHolder, String password, double balance) {
+        Connection conn = DatabaseManager.getConnection();
+        if (conn == null) return false;
+
+        // Hashing the password before storing it
+        String hashedPassword = BCrypt.hashpw(password, BCrypt.gensalt(12));
+
+        try {
+            PreparedStatement stmt = conn.prepareStatement(
+                "INSERT INTO accounts (account_number, account_holder, password_hash, balance) VALUES (?, ?, ?, ?)"
+            );
+            stmt.setString(1, accNo);
+            stmt.setString(2, accHolder);
+            stmt.setString(3, hashedPassword);
+            stmt.setDouble(4, balance);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            System.out.println("❌ Account creation failed: " + e.getMessage());
+        }
+        return false;
     }
 
     public Account getAccount(String accountNumber) {
@@ -19,6 +40,7 @@ public class Bank {
                 return new Account(
                     rs.getString("account_number"),
                     rs.getString("account_holder"),
+                    rs.getString("password_hash"),  // Get hashed password
                     rs.getDouble("balance")
                 );
             }
@@ -44,6 +66,7 @@ public class Bank {
 
         receiver.deposit(amount);
         System.out.println("✅ Transfer successful: $" + amount + " sent to " + toAcc);
+        SecurityLogger.logEvent("Transfer", "Sender: " + sender.getAccountNumber() + ", Reciever: " + receiver.getAccountNumber() + ", Amount: $" + amount);
         return true;
     }
 }

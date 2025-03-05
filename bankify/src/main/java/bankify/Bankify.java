@@ -23,9 +23,11 @@ public class Bankify {
                 String accNo = scanner.nextLine();
                 System.out.print("Enter account holder name: ");
                 String holderName = scanner.nextLine();
+                System.out.print("Enter Password: ");
+                String password = scanner.nextLine();
                 System.out.print("Enter initial deposit: ");
                 double initialDeposit = scanner.nextDouble();
-                if (bank.createAccount(accNo, holderName, initialDeposit)) {
+                if (bank.createAccount(accNo, holderName, password, initialDeposit)) {
                     System.out.println("✅ Account created successfully!");
                 } else {
                     System.out.println("❌ Account creation failed.");

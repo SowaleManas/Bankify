@@ -8,15 +8,21 @@ public class Account {
     private String accountNumber;
     private String accountHolder;
     private double balance;
+    private String passwordHash;
 
-    public Account(String accountNumber, String accountHolder, double balance) {
+    public Account(String accountNumber, String accountHolder, String passwordHash, double balance) {
         this.accountNumber = accountNumber;
         this.accountHolder = accountHolder;
+        this.passwordHash = passwordHash;
         this.balance = balance;
     }
 
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
     public String getAccountName() {
-        return accountHolder
+        return accountHolder;
     }
 
     public String getAccountNumber() {
@@ -43,7 +49,7 @@ public class Account {
             stmt.setString(1, accountNumber);
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
-                return new Account(rs.getString("account_number"), rs.getString("account_holder"), rs.getDouble("balance"));
+                return new Account(rs.getString("account_number"), rs.getString("account_holder"), rs.getString("password_hash"), rs.getDouble("balance"));
             }
         } catch (SQLException e) {
             System.out.println("❌ Error retrieving account: " + e.getMessage());
@@ -69,6 +75,7 @@ public class Account {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("✅ Deposit successful.");
+                SecurityLogger.logEvent("Deposit", "Account: " + accountNumber + ", Amount: $" + amount);
                 return true;
             }
         } catch (SQLException e) {
@@ -97,6 +104,7 @@ public class Account {
             int rowsAffected = stmt.executeUpdate();
             if (rowsAffected > 0) {
                 System.out.println("✅ Withdrawal successful.");
+                SecurityLogger.logEvent("Withdrawal", "Account: " + accountNumber + ", Amount: $" + amount);
                 return true;
             }
         } catch (SQLException e) {
